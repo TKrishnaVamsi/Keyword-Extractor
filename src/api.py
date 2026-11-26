@@ -14,12 +14,15 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
+from pathlib import Path
+
 from src.config import (
-    MLFLOW_TRACKING_URI,
-    MODEL_URI,
     INFERENCE_LOG,
     FEEDBACK_PATH,
 )
+
+MODEL_PATH = Path(__file__).resolve().parents[1] / "models" / "production_model"
+MODEL_URI = "models/production_model"
 
 from src.data import append_jsonl
 
@@ -31,14 +34,12 @@ state = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-
     try:
-        state["model"] = mlflow.pyfunc.load_model(MODEL_URI)
-        logger.info("Loaded production model: %s", MODEL_URI)
+        state["model"] = mlflow.pyfunc.load_model(str(MODEL_PATH))
+        logger.info("Loaded model from: %s", MODEL_PATH)
 
     except Exception:
-        logger.exception("Could not load model: %s", MODEL_URI)
+        logger.exception("Could not load model from: %s", MODEL_PATH)
 
     yield
     state.clear()

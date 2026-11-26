@@ -1,0 +1,21 @@
+artifact_path: model
+flavors:
+  python_function:
+    artifacts:
+      config:
+        path: artifacts\config.json
+        uri: C:\Users\krish\Downloads\Fareeha\keyword-extraction-mlops\models\config.json
+    cloudpickle_version: 3.1.3
+    code: null
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.pyfunc.model
+    python_model: python_model.pkl
+    python_version: 3.11.9
+    streamable: false
+mlflow_version: 2.16.2
+model_size_bytes: 205
+model_uuid: a5ac0d3ba59748e7a8a38d0b1862532f
+run_id: 07674f62de0f4408b92b5898468a5f26
+utc_time_created: '2026-11-23 16:17:56.229044'
