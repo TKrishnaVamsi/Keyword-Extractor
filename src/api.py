@@ -4,45 +4,64 @@
 import logging
 import os
 import time
+import threading
 from contextlib import asynccontextmanager
-from fastapi.middleware.cors import CORSMiddleware
+from pathlib import Path
 
 import mlflow
 import mlflow.pyfunc
 import pandas as pd
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from pathlib import Path
-
-from src.config import (
-    INFERENCE_LOG,
-    FEEDBACK_PATH,
-)
-
-MODEL_PATH = Path(__file__).resolve().parents[1] / "models" / "production_model"
-MODEL_URI = "models/production_model"
-
+from src.config import INFERENCE_LOG, FEEDBACK_PATH
 from src.data import append_jsonl
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("keyword-api")
 
-state = {}
+MODEL_PATH = Path(__file__).resolve().parents[1] / "models" / "production_model"
+MODEL_URI = "models/production_model"
+
+state = {
+    "model": None,
+    "loading": False,
+    "error": None,
+}
+
+
+def load_model_background():
+    """Load the model without blocking the web server startup."""
+    state["loading"] = True
+    state["error"] = None
+
+    try:
+        logger.info("Loading model from: %s", MODEL_PATH)
+        model = mlflow.pyfunc.load_model(str(MODEL_PATH))
+        state["model"] = model
+        logger.info("Production model loaded successfully.")
+
+    except Exception as exc:
+        state["error"] = str(exc)
+        logger.exception("Could not load production model.")
+
+    finally:
+        state["loading"] = False
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    try:
-        state["model"] = mlflow.pyfunc.load_model(str(MODEL_PATH))
-        logger.info("Loaded model from: %s", MODEL_PATH)
-
-    except Exception:
-        logger.exception("Could not load model from: %s", MODEL_PATH)
+    thread = threading.Thread(
+        target=load_model_background,
+        daemon=True,
+    )
+    thread.start()
 
     yield
-    state.clear()
+
+    state["model"] = None
 
 
 app = FastAPI(
@@ -60,8 +79,8 @@ app.add_middleware(
     allow_origins=[
         "http://127.0.0.1:5500",
         "http://localhost:5500",
-        "https://keyword-extractor-36r4.onrender.com",
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -103,18 +122,24 @@ def home():
 def health():
     return {
         "status": "ok",
-        "model_loaded": "model" in state,
+        "model_loaded": state["model"] is not None,
+        "model_loading": state["loading"],
+        "model_error": state["error"],
         "model_uri": MODEL_URI,
     }
 
 
 def run_extraction(req: ExtractRequest):
-    model = state.get("model")
+    model = state["model"]
 
     if model is None:
         raise HTTPException(
             status_code=503,
-            detail="Production model is not loaded. Check MLflow.",
+            detail=(
+                "Model is still loading."
+                if state["loading"]
+                else "Model is unavailable. Check Render logs."
+            ),
         )
 
     try:
@@ -127,7 +152,6 @@ def run_extraction(req: ExtractRequest):
 
         keywords = list(prediction)
 
-        # Prediction logs are for monitoring, not training labels.
         if os.getenv("LOG_REQUESTS", "1") == "1":
             append_jsonl(
                 [{
@@ -166,7 +190,6 @@ def predict(req: ExtractRequest):
 
 @app.post("/feedback", response_model=FeedbackResponse)
 def submit_feedback(req: FeedbackRequest):
-    # Clean and validate the manually supplied labels.
     verified_keywords = list(dict.fromkeys(
         keyword.strip()
         for keyword in req.keywords
@@ -189,12 +212,12 @@ def submit_feedback(req: FeedbackRequest):
     try:
         append_jsonl([record], FEEDBACK_PATH)
 
-    except Exception as exc:
+    except Exception:
         logger.exception("Could not save feedback")
         raise HTTPException(
             status_code=500,
             detail="Could not save feedback.",
-        ) from exc
+        )
 
     return FeedbackResponse(
         status="success",
