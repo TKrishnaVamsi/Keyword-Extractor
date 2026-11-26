@@ -13,3 +13,4 @@ data/processed/
 data/inference/
 data/incoming/
 *.pyc
+model_cache/

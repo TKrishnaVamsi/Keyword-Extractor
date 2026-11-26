@@ -1,16 +1,29 @@
 """BERT-based keyword extraction (KeyBERT-style): candidate n-grams are ranked by
 cosine similarity to the document embedding, then re-ranked with MMR for diversity."""
+import os
 from functools import lru_cache
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.feature_extraction.text import CountVectorizer
-
+from pathlib import Path
 
 @lru_cache(maxsize=4)
 def get_encoder(model_name: str):
-    return SentenceTransformer(model_name)
+    cache_dir = os.getenv(
+        "SENTENCE_TRANSFORMERS_HOME",
+        str(Path(__file__).resolve().parents[1] / "model_cache")
+    )
 
+    print(f"Initializing embedding model: {model_name}", flush=True)
+
+    encoder = SentenceTransformer(
+        model_name,
+        cache_folder=cache_dir
+    )
+
+    print("Embedding model initialized successfully.", flush=True)
+    return encoder
 
 def extract_keywords(text, encoder, top_n=5, ngram_range=(1, 2), diversity=0.5, candidate_pool=30):
     try:
