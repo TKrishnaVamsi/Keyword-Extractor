@@ -1,0 +1,10 @@
+__pycache__/
+.venv/
+mlruns/
+mlartifacts/
+mlflow.db
+models/
+data/processed/
+data/inference/
+data/incoming/
+*.pyc

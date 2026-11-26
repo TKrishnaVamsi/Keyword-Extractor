@@ -1,0 +1,129 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: python -m src.prepare
+    deps:
+    - path: data/processed/test.jsonl
+      hash: md5
+      md5: 19ca9d8127db3a2207cd1dee015b4166
+      size: 2324385
+    - path: data/processed/train.jsonl
+      hash: md5
+      md5: 77eb6886b4ffe93ee24bfa55bdff3549
+      size: 11576808
+    - path: data/processed/validation.jsonl
+      hash: md5
+      md5: 23fab0bf321a0bc3fa0938ad8ea5cefe
+      size: 2315220
+    - path: src/config.py
+      hash: md5
+      md5: 1c3024986425e9ef1ee8c77071c4dbd1
+      size: 1030
+    - path: src/data.py
+      hash: md5
+      md5: d73b64f5c1fbd114d870ea37f0a5d4b3
+      size: 716
+    - path: src/prepare.py
+      hash: md5
+      md5: 7c47c0db556d740bc985fee3a36f9e93
+      size: 2518
+    outs:
+    - path: data/prepared/test.jsonl
+      hash: md5
+      md5: 19ca9d8127db3a2207cd1dee015b4166
+      size: 2324385
+    - path: data/prepared/train.jsonl
+      hash: md5
+      md5: 77eb6886b4ffe93ee24bfa55bdff3549
+      size: 11576808
+    - path: data/prepared/validation.jsonl
+      hash: md5
+      md5: 23fab0bf321a0bc3fa0938ad8ea5cefe
+      size: 2315220
+  train:
+    cmd: python -m src.train
+    deps:
+    - path: data/prepared/train.jsonl
+      hash: md5
+      md5: 77eb6886b4ffe93ee24bfa55bdff3549
+      size: 11576808
+    - path: data/prepared/validation.jsonl
+      hash: md5
+      md5: 23fab0bf321a0bc3fa0938ad8ea5cefe
+      size: 2315220
+    - path: src/config.py
+      hash: md5
+      md5: 1c3024986425e9ef1ee8c77071c4dbd1
+      size: 1030
+    - path: src/data.py
+      hash: md5
+      md5: d73b64f5c1fbd114d870ea37f0a5d4b3
+      size: 716
+    - path: src/extractor.py
+      hash: md5
+      md5: f014ffa9dde2d7941cfdb617dbfa3352
+      size: 1684
+    - path: src/keyword_model.py
+      hash: md5
+      md5: abf379407ae131ff8116f15fcf0e1489
+      size: 1264
+    - path: src/train.py
+      hash: md5
+      md5: d707fa526851ad0f9ce58d059ddbd6de
+      size: 6749
+    params:
+      params.yaml:
+        train:
+          embedding_model: sentence-transformers/all-MiniLM-L6-v2
+          top_n: 5
+          ngram_ranges:
+          - - 1
+            - 1
+          - - 1
+            - 2
+          - - 1
+            - 3
+          diversities:
+          - 0.0
+          - 0.3
+          - 0.5
+          - 0.7
+          min_improvement: 0.01
+          tuning_samples: 500
+    outs:
+    - path: results/metrics.json
+      hash: md5
+      md5: f9efe512983bffbcadaacca2fb6a0eb2
+      size: 385
+  evaluate:
+    cmd: python -m src.evaluate
+    deps:
+    - path: data/prepared/test.jsonl
+      hash: md5
+      md5: 19ca9d8127db3a2207cd1dee015b4166
+      size: 2324385
+    - path: models/config.json
+      hash: md5
+      md5: a56674552e8f059b3efe81ffc44cc149
+      size: 144
+    - path: src/config.py
+      hash: md5
+      md5: 1c3024986425e9ef1ee8c77071c4dbd1
+      size: 1030
+    - path: src/data.py
+      hash: md5
+      md5: d73b64f5c1fbd114d870ea37f0a5d4b3
+      size: 716
+    - path: src/evaluate.py
+      hash: md5
+      md5: 323f9f7ea18972128e08d4a5d0d6cb96
+      size: 3911
+    - path: src/extractor.py
+      hash: md5
+      md5: f014ffa9dde2d7941cfdb617dbfa3352
+      size: 1684
+    outs:
+    - path: results/test_metrics.json
+      hash: md5
+      md5: 442123e9ea775e3c8321c7244f1e759b
+      size: 441

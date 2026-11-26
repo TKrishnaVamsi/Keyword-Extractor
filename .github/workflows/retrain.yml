@@ -1,0 +1,37 @@
+name: Scheduled retrain
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"   # every Monday 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    env:
+      MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install -r requirements.txt
+      - name: Pull data and pipeline cache
+        run: dvc pull
+      - name: Retrain if drift detected
+        run: python -m src.retrain
+      - name: Push data and commit updated pipeline state
+        run: |
+          dvc add data/raw/documents.jsonl
+          dvc push
+          git config user.name "mlops-bot"
+          git config user.email "mlops-bot@users.noreply.github.com"
+          git add -A dvc.lock data/raw/documents.jsonl.dvc data/incoming results .gitignore
+          git diff --cached --quiet || (git commit -m "chore: scheduled retrain" && git push)

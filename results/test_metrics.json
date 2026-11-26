@@ -1,0 +1,19 @@
+{
+  "test_precision_micro": 0.0883,
+  "test_recall_micro": 0.16899521531100478,
+  "test_f1_micro": 0.11599343185550082,
+  "test_f1_macro": 0.11799964037080937,
+  "true_positives": 883,
+  "false_positives": 9117,
+  "false_negatives": 4342,
+  "n_test": 2000,
+  "config": {
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "top_n": 5,
+    "ngram_range": [
+      1,
+      2
+    ],
+    "diversity": 0.0
+  }
+}

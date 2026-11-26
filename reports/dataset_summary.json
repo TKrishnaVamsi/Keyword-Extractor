@@ -1,0 +1,27 @@
+{
+    "dataset": "KP20k",
+    "source": "midas/kp20k",
+    "configuration": "raw",
+    "sampling": "First N usable records from each official split",
+    "random_seed": 42,
+    "splits": {
+        "train": {
+            "records": 10000,
+            "skipped": 1409,
+            "lines_inspected": 11409,
+            "file": "data\\processed\\train.jsonl"
+        },
+        "validation": {
+            "records": 2000,
+            "skipped": 270,
+            "lines_inspected": 2270,
+            "file": "data\\processed\\validation.jsonl"
+        },
+        "test": {
+            "records": 2000,
+            "skipped": 267,
+            "lines_inspected": 2267,
+            "file": "data\\processed\\test.jsonl"
+        }
+    }
+}

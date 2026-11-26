@@ -1,0 +1,19 @@
+{
+  "val_f1": 0.12314483407745831,
+  "tuning_f1": 0.12163222846984452,
+  "model_version": 1,
+  "promoted": true,
+  "production_f1_before": null,
+  "config": {
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "top_n": 5,
+    "ngram_range": [
+      1,
+      2
+    ],
+    "diversity": 0.0
+  },
+  "n_train": 10000,
+  "n_tuning": 500,
+  "n_val": 2000
+}

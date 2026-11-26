@@ -1,0 +1,45 @@
+stages:
+  prepare:
+    cmd: python -m src.prepare
+    deps:
+      - src/prepare.py
+      - src/data.py
+      - src/config.py
+      - data/processed/train.jsonl
+      - data/processed/validation.jsonl
+      - data/processed/test.jsonl
+    outs:
+      - data/prepared/train.jsonl
+      - data/prepared/validation.jsonl
+      - data/prepared/test.jsonl
+
+  train:
+    cmd: python -m src.train
+    deps:
+      - src/train.py
+      - src/extractor.py
+      - src/keyword_model.py
+      - src/config.py
+      - src/data.py
+      - data/prepared/train.jsonl
+      - data/prepared/validation.jsonl
+    params:
+      - train
+    outs:
+      - models/config.json
+    metrics:
+      - results/metrics.json:
+          cache: false
+    
+  evaluate:
+    cmd: python -m src.evaluate
+    deps:
+      - src/evaluate.py
+      - src/extractor.py
+      - src/config.py
+      - src/data.py
+      - models/config.json
+      - data/prepared/test.jsonl
+    metrics:
+      - results/test_metrics.json:
+          cache: false
